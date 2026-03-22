@@ -1,6 +1,5 @@
 #include <print>
 #include <cstdint>
-#include <iostream>
 
 uint32_t euclidean_gcd_rec(uint32_t a, uint32_t b)
 {
@@ -63,9 +62,11 @@ void test_gcds()
     {
         uint32_t actual_iter = euclidean_gcd_iter(inputs[i][0], inputs[i][1]);
         uint32_t actual_rec = euclidean_gcd_rec(inputs[i][0], inputs[i][1]);
-        std::println("Iter: %d", actual_iter == expecteds[i]);
-        std::println("Rec: %d", actual_rec == expecteds[i]);
+        std::println("Iter: {}", actual_iter == expecteds[i]);
+        std::println("Rec: {}", actual_rec == expecteds[i]);
     }
+
+    std::println();
 }
 
 void test_lcm()
@@ -90,20 +91,27 @@ void test_lcm()
         uint32_t actual = lcm(inputs[i][0], inputs[i][1]);
         std::println("Iter: {}", actual == expecteds[i]);
     }
+
+    std::println();
+}
+
+void perform_runs()
+{
+    std::println("Perform runs:");
+    for (uint32_t a = 30; a <= 40; a++)
+    {
+        for (uint32_t b = 30; b <= 40; b++)
+        {
+            std::println("[{}, {}] GCD: {:>5}, LCM: {:>5}, Multiply: {:>5}", a, b, euclidean_gcd_iter(a, b), lcm(a, b), a * b);
+        }
+    }
 }
 
 int main()
 {
     test_gcds();
     test_lcm();
-
-    for (uint32_t a = 30; a <= 40; a++)
-    {
-        for (uint32_t b = 30; b <= 40; b++)
-        {
-            std::println("");
-        }
-    }
+    perform_runs();
 
     return 0;
 }
