@@ -6,17 +6,6 @@ uint32_t sqrt(uint32_t n)
     return static_cast<uint32_t>(std::sqrt(static_cast<double>(n)));
 }
 
-bool is_prime(uint32_t suspect)
-{
-    uint32_t end_inclusive = sqrt(suspect);
-    for (uint32_t i = 2; i <= end_inclusive; i++)
-    {
-        if (suspect % i == 0)
-            return false;
-    }
-    return true;
-}
-
 std::vector<uint32_t> sieve_primes(uint32_t k)
 {
     // Indices go from 0 to k. We won't use 0 and 1, but that is alright.
@@ -25,12 +14,8 @@ std::vector<uint32_t> sieve_primes(uint32_t k)
     uint32_t end_inclusive = sqrt(k);
     for (uint32_t i = 2; i <= end_inclusive; i++)
     {
-        // If number is already marked as non-prime, skip this iteration.
-        if (sieve[i])
-            continue;
-
-        // If number is not marked yet and happens to be a prime, cross out multiples.
-        if (is_prime(i))
+        // If number has not yet been crossed out, remove all multiples.
+        if (!sieve[i])
         {
             for (uint32_t j = 2 * i; j <= k; j += i)
                 sieve[j] = true;
