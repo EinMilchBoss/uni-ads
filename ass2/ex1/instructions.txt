@@ -1,0 +1,29 @@
+// n
+1 LDK 4
+2 STA 1
+
+// i
+3 LDK 0
+4 STA 2
+
+// sum
+5 LDK 0
+6 STA 3
+
+// const 1
+7 LDK 1
+8 STA 4
+
+9 LDA 2
+10 MUL 2
+11 ADD 3
+12 STA 3
+
+13 LDA 2
+14 ADD 4
+15 STA 2
+
+16 SUB 1
+17 JLE 9
+
+18 HLT 99
