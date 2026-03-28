@@ -6,7 +6,6 @@
 #include <sstream>
 #include <stdexcept>
 #include <array>
-#include <unordered_map>
 
 enum class instruction_mnemonic
 {
@@ -29,7 +28,8 @@ enum class instruction_mnemonic
     JGE,
 };
 
-const std::string instruction_mnemonic_strings[] = {
+constexpr size_t instruction_mnemonic_name_size = 17;
+constexpr const char *const instruction_mnemonic_name[instruction_mnemonic_name_size] = {
     "ADD",
     "SUB",
     "MUL",
@@ -49,76 +49,17 @@ const std::string instruction_mnemonic_strings[] = {
     "JGE",
 };
 
-static const std::unordered_map<std::string, instruction_mnemonic> instruction_mnemonic_translation = {
+instruction_mnemonic parse_instruction_mnemonic(const std::string &s)
+{
+    for (size_t i = 0; i < instruction_mnemonic_name_size; i++)
     {
-        "ADD",
-        instruction_mnemonic::ADD,
-    },
-    {
-        "SUB",
-        instruction_mnemonic::SUB,
-    },
-    {
-        "MUL",
-        instruction_mnemonic::MUL,
-    },
-    {
-        "DIV",
-        instruction_mnemonic::DIV,
-    },
-    {
-        "LDA",
-        instruction_mnemonic::LDA,
-    },
-    {
-        "LDK",
-        instruction_mnemonic::LDK,
-    },
-    {
-        "STA",
-        instruction_mnemonic::STA,
-    },
-    {
-        "INP",
-        instruction_mnemonic::INP,
-    },
-    {
-        "OUT",
-        instruction_mnemonic::OUT,
-    },
-    {
-        "HLT",
-        instruction_mnemonic::HLT,
-    },
-    {
-        "JMP",
-        instruction_mnemonic::JMP,
-    },
-    {
-        "JEZ",
-        instruction_mnemonic::JEZ,
-    },
-    {
-        "JNE",
-        instruction_mnemonic::JNE,
-    },
-    {
-        "JLZ",
-        instruction_mnemonic::JLZ,
-    },
-    {
-        "JLE",
-        instruction_mnemonic::JLE,
-    },
-    {
-        "JGZ",
-        instruction_mnemonic::JGZ,
-    },
-    {
-        "JGE",
-        instruction_mnemonic::JGE,
-    },
-};
+        if (s == instruction_mnemonic_name[i])
+        {
+            return static_cast<instruction_mnemonic>(i);
+        }
+    }
+    throw std::runtime_error("The user shall only use valid instruction mnemonics.");
+}
 
 struct instruction
 {
@@ -128,7 +69,7 @@ struct instruction
 
     void print() const noexcept
     {
-        std::cout << number << ' ' << instruction_mnemonic_strings[static_cast<int>(mnemonic)] << ' ' << argument << '\n';
+        std::cout << number << ' ' << instruction_mnemonic_name[static_cast<int>(mnemonic)] << ' ' << argument << '\n';
     }
 };
 
@@ -150,8 +91,6 @@ public:
         while (is_running && program_counter_ < instructions_.size())
         {
             const instruction &current = instructions_[program_counter_];
-            current.print();
-            print_dump();
 
             program_counter_ += 1;
 
@@ -221,10 +160,9 @@ public:
 
     void print_instructions() const noexcept
     {
+        std::cout << "INSTRUCTIONS:\n";
         for (const instruction &i : instructions_)
-        {
-            std::cout << instruction_mnemonic_strings[static_cast<int>(i.mnemonic)] << "\n";
-        }
+            i.print();
     }
 
     void print_dump() const noexcept
@@ -269,7 +207,7 @@ instruction parse_instruction(const std::vector<std::string> &line_tokens)
         throw std::runtime_error("Every line shall consist of 3 tokens.");
 
     const uint32_t number = parse_u32(line_tokens[0]);
-    const instruction_mnemonic mnemonic = instruction_mnemonic_translation.at(line_tokens[1].c_str());
+    const instruction_mnemonic mnemonic = parse_instruction_mnemonic(line_tokens[1]);
     const uint32_t argument = parse_u32(line_tokens[2]);
 
     return {
@@ -323,9 +261,6 @@ std::vector<instruction> read_instructions(const char *file)
 
 int main()
 {
-    // std::array<int32_t, 32> data_memory{};
-    // std::vector<std::string> program_memory{};
-
     std::vector<instruction> instructions = read_instructions("./instructions.txt");
     program p{std::move(instructions)};
     p.print_instructions();
