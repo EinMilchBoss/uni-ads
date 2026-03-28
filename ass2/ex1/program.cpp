@@ -75,10 +75,16 @@ struct instruction
 
 class program
 {
-    size_t program_counter_ = 0;
-    std::array<int32_t, 8> data_{};
-
     const std::vector<instruction> instructions_;
+
+    void print_dump(std::array<int32_t, 8> data) const noexcept
+    {
+        std::cout << "DATA:\n";
+        for (size_t i = 0; i < data.size(); i++)
+        {
+            std::cout << "[" << std::setfill('0') << std::setw(2) << i << "] " << data[i] << "\n";
+        }
+    }
 
 public:
     program(std::vector<instruction> &&instructions) : instructions_{std::move(instructions)}
@@ -88,74 +94,80 @@ public:
     void run()
     {
         bool is_running = true;
-        while (is_running && program_counter_ < instructions_.size())
+        size_t program_counter = 0;
+        std::array<int32_t, 8> data{};
+
+        while (is_running && program_counter < instructions_.size())
         {
-            const instruction &current = instructions_[program_counter_];
+            // Fetch instruction.
+            const instruction &current = instructions_[program_counter];
+            program_counter += 1;
 
-            program_counter_ += 1;
-
+            // Decode + Execute instruction.
             switch (current.mnemonic)
             {
             case instruction_mnemonic::ADD:
-                data_[0] += data_[current.argument];
+                data[0] += data[current.argument];
                 break;
             case instruction_mnemonic::SUB:
-                data_[0] -= data_[current.argument];
+                data[0] -= data[current.argument];
                 break;
             case instruction_mnemonic::MUL:
-                data_[0] *= data_[current.argument];
+                data[0] *= data[current.argument];
                 break;
             case instruction_mnemonic::DIV:
-                data_[0] /= data_[current.argument];
+                data[0] /= data[current.argument];
                 break;
             case instruction_mnemonic::LDA:
-                data_[0] = data_[current.argument];
+                data[0] = data[current.argument];
                 break;
             case instruction_mnemonic::LDK:
-                data_[0] = current.argument;
+                data[0] = current.argument;
                 break;
             case instruction_mnemonic::STA:
-                data_[current.argument] = data_[0];
+                data[current.argument] = data[0];
                 break;
             case instruction_mnemonic::INP:
             case instruction_mnemonic::OUT:
                 throw std::runtime_error("INP and OUT are not defined.");
                 break;
             case instruction_mnemonic::HLT:
-                print_dump();
                 is_running = false;
                 break;
             case instruction_mnemonic::JMP:
-                program_counter_ = current.argument - 1;
+                program_counter = current.argument - 1;
                 break;
             case instruction_mnemonic::JEZ:
-                if (data_[0] == 0)
-                    program_counter_ = current.argument - 1;
+                if (data[0] == 0)
+                    program_counter = current.argument - 1;
                 break;
             case instruction_mnemonic::JNE:
-                if (data_[0] != 0)
-                    program_counter_ = current.argument - 1;
+                if (data[0] != 0)
+                    program_counter = current.argument - 1;
                 break;
             case instruction_mnemonic::JLZ:
-                if (data_[0] < 0)
-                    program_counter_ = current.argument - 1;
+                if (data[0] < 0)
+                    program_counter = current.argument - 1;
                 break;
             case instruction_mnemonic::JLE:
-                if (data_[0] <= 0)
-                    program_counter_ = current.argument - 1;
+                if (data[0] <= 0)
+                    program_counter = current.argument - 1;
                 break;
             case instruction_mnemonic::JGZ:
-                if (data_[0] > 0)
-                    program_counter_ = current.argument - 1;
+                if (data[0] > 0)
+                    program_counter = current.argument - 1;
                 break;
             case instruction_mnemonic::JGE:
-                if (data_[0] >= 0)
-                    program_counter_ = current.argument - 1;
+                if (data[0] >= 0)
+                    program_counter = current.argument - 1;
                 break;
             default:
                 throw std::runtime_error("Only known mnemonics shall be used.");
             }
         }
+
+        // Dump memory to console.
+        print_dump(data);
     }
 
     void print_instructions() const noexcept
@@ -163,15 +175,6 @@ public:
         std::cout << "INSTRUCTIONS:\n";
         for (const instruction &i : instructions_)
             i.print();
-    }
-
-    void print_dump() const noexcept
-    {
-        std::cout << "DATA:\n";
-        for (size_t i = 0; i < data_.size(); i++)
-        {
-            std::cout << "[" << std::setfill('0') << std::setw(2) << i << "] " << data_[i] << "\n";
-        }
     }
 };
 
