@@ -112,7 +112,7 @@ int main()
 
     constexpr uint16_t runs = 100;
     uint64_t step_sum = 0;
-    for (uint16_t i = 0; i < 100; i++)
+    for (uint16_t i = 0; i < runs; i++)
     {
         unsigned int seed = seed_generator();
 
