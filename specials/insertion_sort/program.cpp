@@ -3,47 +3,7 @@
 #include <random>
 #include <memory>
 
-class rng
-{
-    int32_t from_;
-    int32_t to_;
-    unsigned int seed_;
-    std::mt19937 engine_;
-    std::uniform_int_distribution<int32_t> distribution_;
-
-public:
-    rng(int32_t from, int32_t to, unsigned int seed)
-        : from_(from),
-          to_(to),
-          seed_(seed)
-    {
-        if (from > to)
-            throw std::invalid_argument("random number generator range is invalid");
-
-        engine_ = std::mt19937(seed);
-        distribution_ = std::uniform_int_distribution<int32_t>(from, to);
-    }
-
-    [[nodiscard]] int32_t from() const noexcept
-    {
-        return from_;
-    }
-
-    [[nodiscard]] int32_t to() const noexcept
-    {
-        return to_;
-    }
-
-    [[nodiscard]] unsigned int seed() const noexcept
-    {
-        return seed_;
-    }
-
-    [[nodiscard]] int32_t next() noexcept
-    {
-        return distribution_(engine_);
-    }
-};
+#include "rng.hpp"
 
 uint64_t insertion_sort(int32_t *xs, uint32_t xs_len)
 {
