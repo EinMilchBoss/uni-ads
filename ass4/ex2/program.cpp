@@ -77,11 +77,15 @@ int32_t prepare_partitions(int32_t *xs, int32_t xs_len, unsigned int seed)
 {
     rng rng(0, xs_len - 1, seed);
 
+    // Pull a random element to the front by swapping and
+    // choose that first element as our pivot element.
+    swap(xs[0], xs[rng.next()]);
+    int32_t pivot = xs[0];
+
     // Start with -1 because we first increment and then swap values.
     // We do this, so we are not off by one at the end of swapping.
     int32_t pivot_idx = -1;
 
-    int32_t pivot = xs[0];
     for (int32_t i = 0; i < xs_len; i++)
     {
         if (xs[i] <= pivot)
@@ -142,6 +146,18 @@ void init_random_array(int32_t *xs, int32_t xs_len, unsigned int seed)
     }
 }
 
+bool is_sorted(int32_t *xs, int32_t xs_len)
+{
+    int32_t predecessor = *xs;
+    for (int32_t i = 1; i < xs_len; i++)
+    {
+        if (predecessor > xs[i])
+            return false;
+        predecessor = xs[i];
+    }
+    return true;
+}
+
 void print_array(int32_t *xs, int32_t xs_len)
 {
     for (int32_t i = 0; i < xs_len; i++)
@@ -163,7 +179,16 @@ int main()
         std::cout << "Sorting...\n";
         init_random_array(xs, xs_len, seed);
         four(xs, xs_len, seed);
-        std::cout << "Sorted.\n";
+
+        if (is_sorted(xs, xs_len))
+        {
+            std::cout << "Sorted.\n";
+        }
+        else
+        {
+            std::cerr << "Did not sort.\n";
+            return 1;
+        }
     }
 
     return 0;
