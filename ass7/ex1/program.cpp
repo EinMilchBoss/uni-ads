@@ -112,7 +112,6 @@ class binary_search_tree
 
         if (value < current->value_)
             do_remove(value, current->next_left_, &current->next_left_);
-
         else if (value > current->value_)
             do_remove(value, current->next_right_, &current->next_right_);
         else
@@ -188,12 +187,12 @@ int main()
     bst.add(0);
     bst.add(-2);
     bst.add(-1);
-    // bst.remove(3);
-    // bst.remove(2);
-    // bst.remove(-2);
-    // bst.remove(0);
-    // bst.remove(1);
-    // bst.remove(-1);
+    bst.remove(3);
+    bst.remove(2);
+    bst.remove(-2);
+    bst.remove(0);
+    bst.remove(1);
+    bst.remove(-1);
     bst.remove(1);
     std::cout << bst.to_string_in_order() << "\n";
 
