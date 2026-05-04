@@ -79,13 +79,19 @@ class binary_search_tree
 
             vertex *replacer = leftmost(replacee->next_right_);
 
-            replacee->value_ = replacer->value_;
-
             if (replacer == replacee->next_right_)
-                replacee->next_right_ = nullptr;
+            {
+                replacer->prev_ = replacee->prev_;
+                replacer->next_left_ = replacee->next_left_;
+                *prev_next = replacer;
+                delete replacee;
+            }
             else
+            {
+                replacee->value_ = replacer->value_;
                 replacer->prev_->next_left_ = nullptr;
-            delete replacer;
+                delete replacer;
+            }
         }
         else
         {
@@ -165,9 +171,30 @@ public:
             do_add(new_vertex, root_);
     }
 
-    void remove(int value)
+    void remove_rec(int value)
     {
         do_remove(value, root_, &root_);
+    }
+
+    void remove_iter(int value)
+    {
+        vertex **prev_next = &root_;
+        vertex *current = root_;
+
+        while (current != nullptr && current->value_ != value)
+        {
+            prev_next =
+                value < current->value_
+                    ? &current->next_left_
+                    : &current->next_right_;
+            current = *prev_next;
+        }
+
+        // The value does not exist in our tree.
+        if (current == nullptr)
+            return;
+
+        perform_replacement(current, prev_next);
     }
 
     std::string to_string_in_order() const
@@ -187,13 +214,23 @@ int main()
     bst.add(0);
     bst.add(-2);
     bst.add(-1);
-    bst.remove(3);
-    bst.remove(2);
-    bst.remove(-2);
-    bst.remove(0);
-    bst.remove(1);
-    bst.remove(-1);
-    bst.remove(1);
+
+    bst.remove_rec(3);
+    bst.remove_rec(2);
+    bst.remove_rec(-2);
+    bst.remove_rec(0);
+    bst.remove_rec(1);
+    bst.remove_rec(-1);
+    bst.remove_rec(1);
+
+    bst.remove_iter(3);
+    bst.remove_iter(2);
+    bst.remove_iter(-2);
+    bst.remove_iter(0);
+    bst.remove_iter(1);
+    bst.remove_iter(-1);
+    bst.remove_iter(1);
+
     std::cout << bst.to_string_in_order() << "\n";
 
     return 0;
