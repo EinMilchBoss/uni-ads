@@ -171,11 +171,26 @@ public:
             do_add(new_vertex, root_);
     }
 
+    /**
+     * Worst case runtime complexity for degenerated tree.
+     * This is not divide and conquer, because we only follow one branch at a time.
+     * `perform_replacement()` is Θ(1).
+     *
+     * T(0) = 1
+     * T(n) = T(n - 1) + Θ(1)
+     * => Θ(n)
+     */
     void remove_rec(int value)
     {
         do_remove(value, root_, &root_);
     }
 
+    /**
+     * Worst case runtime complexity for degenerated tree.
+     * Like for a doubly linked list we go through all elements until we reach the last element to remove it.
+     * `perform_replacement()` is Θ(1).
+     * The total time complexity is therefore Θ(n).
+     */
     void remove_iter(int value)
     {
         vertex **prev_next = &root_;
