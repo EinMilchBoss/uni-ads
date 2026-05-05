@@ -254,7 +254,7 @@ binary_search_tree create_random_bst(const size_t n, const unsigned int seed)
         values.push_back(static_cast<int>(i));
 
     std::mt19937 rng(seed);
-    for (size_t j = 0; j < n; j++)
+    for (size_t i = 0; i < n; i++)
     {
         std::uniform_int_distribution<size_t> dist(0, values.size() - 1);
         const size_t rnd_idx = dist(rng);
