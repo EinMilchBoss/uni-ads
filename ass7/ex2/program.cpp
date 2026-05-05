@@ -258,9 +258,12 @@ binary_search_tree create_random_bst(const size_t n, const unsigned int seed)
     {
         std::uniform_int_distribution<size_t> dist(0, values.size() - 1);
         const size_t rnd_idx = dist(rng);
+        const int rnd_value = values[rnd_idx];
 
-        original.add(values[rnd_idx]);
-        values.erase(values.begin() + static_cast<ptrdiff_t>(rnd_idx));
+        values[rnd_idx] = values.back();
+        values.pop_back();
+
+        original.add(rnd_value);
     }
 
     return original;
@@ -303,7 +306,6 @@ int main()
         const std::vector<int> actual_pre = actual.to_pre_order_list();
         const std::vector<int> actual_in = actual.to_in_order_list();
 
-        // The in-order of a BST is always sorted if correct.
         if (expected_pre == actual_pre && expected_in == actual_in)
         {
             std::cout << "Passed test " << i << ".\n";
