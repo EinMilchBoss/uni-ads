@@ -314,7 +314,7 @@ int main()
 
             std::cerr << "Test " << i << " failed:\n";
             std::cerr << "expected (in): " << expected_pre_str << "\n";
-            std::cerr << "actual   (in): " << expected_pre_str << "\n";
+            std::cerr << "actual   (in): " << actual_pre_str << "\n";
 
             return 1;
         }
