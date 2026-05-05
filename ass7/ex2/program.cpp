@@ -80,12 +80,12 @@ class binary_search_tree
         const int value = pre[pre_idx];
 
         const int idx_offset = first_index_of_value(in + in_first_idx, in_last_idx - in_first_idx + 1, value);
-        vertex *left = do_from_pre_and_in_order(pre, in, len, in_first_idx, in_first_idx + idx_offset - 1, pre_idx);
-        vertex *right = do_from_pre_and_in_order(pre, in, len, in_first_idx + idx_offset + 1, in_last_idx, pre_idx);
 
         vertex *new_vertex = new vertex(value);
-        new_vertex->next_left_ = left;
-        new_vertex->next_right_ = right;
+        new_vertex->next_left_ = do_from_pre_and_in_order(pre, in, len, in_first_idx, in_first_idx + idx_offset - 1, pre_idx);
+        ;
+        new_vertex->next_right_ = do_from_pre_and_in_order(pre, in, len, in_first_idx + idx_offset + 1, in_last_idx, pre_idx);
+        ;
 
         return new_vertex;
     }
@@ -182,7 +182,7 @@ public:
     binary_search_tree(const binary_search_tree &) = delete;
     binary_search_tree &operator=(const binary_search_tree &) = delete;
 
-    binary_search_tree(binary_search_tree &&other)
+    binary_search_tree(binary_search_tree &&other) noexcept
     {
         root_ = other.root_;
         other.root_ = nullptr;
@@ -286,10 +286,10 @@ std::string vector_to_string(const std::vector<int> &v)
 
 int main()
 {
-    std::random_device seed_generator;
+    constexpr size_t TEST_RUNS = 10'000;
+    constexpr size_t BST_SIZE = 10'000;
 
-    constexpr size_t TEST_RUNS = 1'000;
-    constexpr size_t BST_SIZE = 1'000;
+    std::random_device seed_generator;
 
     for (size_t i = 1; i <= TEST_RUNS; i++)
     {
