@@ -4,8 +4,8 @@
 #include <sstream>
 #include <vector>
 #include <stdexcept>
-
-#include "rng.hpp"
+#include <algorithm>
+#include <random>
 
 /**
  * Return the first index of the provided value in the orignal array.
@@ -239,95 +239,83 @@ public:
     }
 };
 
-bool run_test(unsigned int seed)
+/**
+ * This function creates a binary search tree of size n with non-repeating values from [1, n].
+ */
+binary_search_tree create_random_bst(const size_t n, const unsigned int seed)
 {
-    std::mt19937 rng(seed);
-
     binary_search_tree original;
-    std::vector<int> values = {1, 2, 3, 4, 5, 6, 7};
-    for (int j = 0; j < 7; j++)
+
+    std::vector<int> values;
+    values.reserve(n);
+    for (size_t i = 1; i <= n; i++)
+        values.push_back(static_cast<int>(i));
+
+    std::mt19937 rng(seed);
+    for (size_t j = 0; j < n; j++)
     {
         std::uniform_int_distribution<size_t> dist(0, values.size() - 1);
-        const size_t idx = dist(rng);
+        const size_t rnd_idx = dist(rng);
 
-        original.add(values[idx]);
-        values.erase(values.begin() + static_cast<ptrdiff_t>(idx));
+        original.add(values[rnd_idx]);
+        values.erase(values.begin() + static_cast<ptrdiff_t>(rnd_idx));
     }
 
-    try
-    {
-        auto pre = original.to_pre_order_list();
-        auto in = original.to_in_order_list();
-        assert(pre.size() == in.size() && "all different orders of the same bst have the same length");
+    return original;
+}
 
-        binary_search_tree reconstructed = binary_search_tree::from_pre_and_in_order(pre.data(), in.data(), static_cast<int>(in.size()));
+/**
+ * This function returns a string containing all values of the passed vector separated by space.
+ */
+std::string vector_to_string(const std::vector<int> &v)
+{
+    if (v.size() == 0)
+        return std::string{};
 
-        auto original_in_str = original.to_string_in_order();
-        auto reconstructed_in_str = reconstructed.to_string_in_order();
-
-        if (original_in_str != reconstructed_in_str)
-        {
-            std::cerr << "The following test case failed:\n";
-            std::cerr << "original (pre): " << original.to_string_pre_order() << "\n";
-            std::cerr << "original (in):  " << original_in_str << "\n";
-            std::cerr << "reconstructred: " << reconstructed_in_str << "\n";
-            return false;
-        }
-
-        return true;
-    }
-    catch (const std::exception &e)
-    {
-        std::cerr << "Error occurred for pre:\n";
-        for (const int x : original.to_pre_order_list())
-            std::cout << x << " ";
-
-        return false;
-    }
+    std::stringstream ss{};
+    ss << v[0];
+    for (size_t i = 1; i < v.size(); i++)
+        ss << ' ' << v[i];
+    return ss.str();
 }
 
 int main()
 {
-    binary_search_tree bst;
-    bst.add(4);
-    bst.add(2);
-    bst.add(6);
-    bst.add(1);
-    bst.add(3);
-    bst.add(5);
-    bst.add(7);
-
-    std::cout << "old in-order:  " << bst.to_string_in_order() << "\n";
-    std::cout << "old pre-order: " << bst.to_string_pre_order() << "\n";
-
-    std::vector<int> in = bst.to_in_order_list();
-    for (const int x : in)
-        std::cout << x << " ";
-    std::cout << "\n";
-
-    std::vector<int> pre = bst.to_pre_order_list();
-    for (const int x : pre)
-        std::cout << x << " ";
-    std::cout << "\n";
-
-    assert(pre.size() == in.size() && "all different orders of the same bst have the same length");
-    auto new_bst = binary_search_tree::from_pre_and_in_order(pre.data(), in.data(), static_cast<int>(in.size()));
-    std::cout << "new in-order:  " << new_bst.to_string_in_order() << "\n";
-    std::cout << "new pre-order: " << new_bst.to_string_pre_order() << "\n";
-
-    // Perform randomized tests.
     std::random_device seed_generator;
-    // TODO: unsigned int seed = seed_generator();
-    unsigned int seed = 2166346741;
-    rng rng(0, 9, seed);
+    const unsigned int seed = seed_generator();
     std::cout << "Using random seed " << seed << ".\n";
 
-    for (int i = 0; i < 10000; i++)
-    {
-        if (!run_test(seed))
-            return 1;
+    constexpr size_t TEST_RUNS = 1'000'000;
+    constexpr size_t BST_SIZE = 1000;
 
-        std::cout << "Passed test " << i << ".\n";
+    for (size_t i = 0; i < TEST_RUNS; i++)
+    {
+        const binary_search_tree expected = create_random_bst(BST_SIZE, seed);
+        const std::vector<int> expected_pre = expected.to_pre_order_list();
+        const std::vector<int> expected_in = expected.to_in_order_list();
+
+        assert(expected_pre.size() == expected_in.size() && "all different orders of the same bst have the same length");
+
+        const binary_search_tree actual = binary_search_tree::from_pre_and_in_order(expected_pre.data(), expected_in.data(), static_cast<int>(expected_in.size()));
+        const std::vector<int> actual_pre = actual.to_pre_order_list();
+        const std::vector<int> actual_in = actual.to_in_order_list();
+
+        // The in-order of a BST is always sorted if correct.
+        if (expected_pre == actual_pre && expected_in == actual_in)
+        {
+            std::cout << "Passed test " << i << ".\n";
+        }
+        else
+        {
+            const std::string expected_pre_str = vector_to_string(expected_pre);
+            const std::string actual_pre_str = vector_to_string(actual_pre);
+
+            std::cerr << "Test " << i << " failed:\n";
+            std::cerr << "expected (in): " << expected_pre_str << "\n";
+            std::cerr << "actual   (in): " << expected_pre_str << "\n";
+
+            return 1;
+        }
     }
 
     std::cout << "All tests passed.\n";
