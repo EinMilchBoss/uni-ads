@@ -284,14 +284,15 @@ std::string vector_to_string(const std::vector<int> &v)
 int main()
 {
     std::random_device seed_generator;
-    const unsigned int seed = seed_generator();
-    std::cout << "Using random seed " << seed << ".\n";
 
-    constexpr size_t TEST_RUNS = 1'000'000;
-    constexpr size_t BST_SIZE = 1000;
+    constexpr size_t TEST_RUNS = 1'000;
+    constexpr size_t BST_SIZE = 1'000;
 
     for (size_t i = 0; i < TEST_RUNS; i++)
     {
+        const unsigned int seed = seed_generator();
+        std::cout << "Using random seed " << seed << ".\n";
+
         const binary_search_tree expected = create_random_bst(BST_SIZE, seed);
         const std::vector<int> expected_pre = expected.to_pre_order_list();
         const std::vector<int> expected_in = expected.to_in_order_list();
