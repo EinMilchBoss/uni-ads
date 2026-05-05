@@ -56,6 +56,48 @@ class binary_search_tree
     {
     }
 
+    void delete_including_subtrees(vertex *parent)
+    {
+        if (parent == nullptr)
+            return;
+
+        delete_including_subtrees(parent->next_left_);
+        delete_including_subtrees(parent->next_right_);
+        delete parent;
+    }
+
+    static vertex *do_from_pre_and_in_order(
+        const int *pre,
+        const int *in,
+        const int len,
+        const int in_first_idx,
+        const int in_last_idx,
+        int &pre_idx)
+    {
+        pre_idx += 1;
+        const int value = pre[pre_idx];
+
+        if (in_first_idx == in_last_idx)
+            return new vertex(value);
+        else if (in_first_idx > in_last_idx)
+        {
+            pre_idx -= 1;
+            return nullptr;
+        }
+        vertex *new_vertex = new vertex(value);
+
+        const int idx_offset = first_index_of_value(in + in_first_idx, in_last_idx - in_first_idx + 1, value);
+
+        vertex *left = do_from_pre_and_in_order(pre, in, len, in_first_idx, in_first_idx + idx_offset - 1, pre_idx);
+
+        vertex *right = do_from_pre_and_in_order(pre, in, len, in_first_idx + idx_offset + 1, in_last_idx, pre_idx);
+
+        new_vertex->next_left_ = left;
+        new_vertex->next_right_ = right;
+
+        return new_vertex;
+    }
+
     void do_add(vertex *new_vertex, vertex *current)
     {
         assert(new_vertex != nullptr && "we add a valid vertex");
@@ -156,47 +198,15 @@ public:
 
     binary_search_tree &operator=(binary_search_tree &&) = delete;
 
-    ~binary_search_tree()
+    ~binary_search_tree() noexcept
     {
-        // TODO
-    }
-
-    static vertex *recurse(
-        const int *pre,
-        const int *in,
-        const int len,
-        const int in_first_idx,
-        const int in_last_idx,
-        int &pre_idx)
-    {
-        pre_idx += 1;
-        const int value = pre[pre_idx];
-
-        if (in_first_idx == in_last_idx)
-            return new vertex(value);
-        else if (in_first_idx > in_last_idx)
-        {
-            pre_idx -= 1;
-            return nullptr;
-        }
-        vertex *new_vertex = new vertex(value);
-
-        const int idx_offset = first_index_of_value(in + in_first_idx, in_last_idx - in_first_idx + 1, value);
-
-        vertex *left = recurse(pre, in, len, in_first_idx, in_first_idx + idx_offset - 1, pre_idx);
-
-        vertex *right = recurse(pre, in, len, in_first_idx + idx_offset + 1, in_last_idx, pre_idx);
-
-        new_vertex->next_left_ = left;
-        new_vertex->next_right_ = right;
-
-        return new_vertex;
+        delete_including_subtrees(root_);
     }
 
     static binary_search_tree from_pre_and_in_order(const int *pre, const int *in, const int len)
     {
         int pre_idx = -1;
-        binary_search_tree bst(recurse(pre, in, len, 0, len - 1, pre_idx));
+        binary_search_tree bst(do_from_pre_and_in_order(pre, in, len, 0, len - 1, pre_idx));
         return bst;
     }
 
