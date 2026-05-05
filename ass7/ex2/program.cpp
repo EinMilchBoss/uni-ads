@@ -74,16 +74,11 @@ class binary_search_tree
         const int in_last_idx,
         int &pre_idx)
     {
+        if (in_first_idx > in_last_idx)
+            return nullptr;
+
         pre_idx += 1;
         const int value = pre[pre_idx];
-
-        if (in_first_idx == in_last_idx)
-            return new vertex(value);
-        else if (in_first_idx > in_last_idx)
-        {
-            pre_idx -= 1;
-            return nullptr;
-        }
 
         const int idx_offset = first_index_of_value(in + in_first_idx, in_last_idx - in_first_idx + 1, value);
         vertex *left = do_from_pre_and_in_order(pre, in, len, in_first_idx, in_first_idx + idx_offset - 1, pre_idx);
