@@ -1,11 +1,10 @@
 #include <iostream>
-#include <cstdint>
-#include <cassert>
 #include <sstream>
 #include <vector>
 #include <stdexcept>
-#include <algorithm>
 #include <random>
+#include <cstdint>
+#include <cassert>
 
 /**
  * Return the first index of the provided value in the orignal array.
