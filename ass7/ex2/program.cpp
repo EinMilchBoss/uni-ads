@@ -288,7 +288,7 @@ int main()
     constexpr size_t TEST_RUNS = 1'000;
     constexpr size_t BST_SIZE = 1'000;
 
-    for (size_t i = 0; i < TEST_RUNS; i++)
+    for (size_t i = 1; i <= TEST_RUNS; i++)
     {
         const unsigned int seed = seed_generator();
         std::cout << "Using random seed " << seed << ".\n";
