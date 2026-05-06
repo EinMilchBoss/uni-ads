@@ -83,9 +83,7 @@ class binary_search_tree
 
         vertex *new_vertex = new vertex(value);
         new_vertex->next_left_ = do_from_pre_and_in_order(pre, in, len, in_first_idx, in_first_idx + idx_offset - 1, pre_idx);
-        ;
         new_vertex->next_right_ = do_from_pre_and_in_order(pre, in, len, in_first_idx + idx_offset + 1, in_last_idx, pre_idx);
-        ;
 
         return new_vertex;
     }
