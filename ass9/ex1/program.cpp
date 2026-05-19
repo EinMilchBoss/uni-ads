@@ -131,7 +131,7 @@ public:
         return values_[idx];
     }
 
-    friend std::ostream &operator<<(std::ostream &s, min_heap heap)
+    friend std::ostream &operator<<(std::ostream &s, const min_heap &heap)
     {
         if (heap.size() == 0)
             return s << "[]";
@@ -257,13 +257,10 @@ int main()
     pq.add(2, 2);
     pq.add(3, 3);
     pq.add(6, 6);
-
     std::cout << pq << "\n";
-
     std::cout << "Min: " << pq.min().value() << "\n";
 
     auto min_item = pq.pop_min();
-
     std::cout << "Extracted min: " << min_item.value() << "\n";
     std::cout << "New min: " << pq.min().value() << "\n";
     std::cout << pq << "\n";
