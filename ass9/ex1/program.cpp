@@ -3,12 +3,12 @@
 #include <cstdint>
 #include <cassert>
 
-template <typename T>
+template <typename V>
 class min_heap
 {
-    std::vector<T> values_;
+    std::vector<V> values_;
 
-    size_t get_min_value_idx(size_t l_idx, size_t r_idx)
+    size_t get_min_value_idx(const size_t l_idx, const size_t r_idx) const noexcept
     {
         if (values_[l_idx] <= values_[r_idx])
             return l_idx;
@@ -16,9 +16,8 @@ class min_heap
             return r_idx;
     }
 
-    void sift_down_unchecked(const size_t curr_idx) noexcept
+    void sift_down_unchecked(const size_t curr_idx)
     {
-        std::cout << curr_idx << " / " << values_.size() << std::endl;
         assert(curr_idx < values_.size() && "tried to sift down invalid index of min heap");
 
         const size_t next_l_idx = 2 * curr_idx + 1;
@@ -47,7 +46,7 @@ class min_heap
         }
     }
 
-    void bubble_up_unchecked(const size_t curr_idx) noexcept
+    void bubble_up_unchecked(const size_t curr_idx)
     {
         assert(curr_idx < values_.size() && "tried to bubble up invalid index of min heap");
 
@@ -81,7 +80,7 @@ class min_heap
     }
 
 public:
-    const T &top() const
+    const V &top() const
     {
         if (values_.size() == 0)
             throw std::out_of_range("tried to get top element of empty min heap");
@@ -94,26 +93,31 @@ public:
         return values_.size();
     }
 
-    void add(T value)
+    void add(V value)
     {
         values_.push_back(value);
-        heapify();
+        bubble_up_unchecked(values_.size() - 1);
     }
 
-    T pop()
+    V pop()
     {
-        T top = values_[0];
+        if (values_.size() == 0)
+            throw std::out_of_range("tried to pop non-existing element of priority queue");
 
-        std::swap(values_[0], values_[values_.size() - 1]);
+        std::swap(values_.front(), values_.back());
+        const V popped = std::move(values_.back());
         values_.pop_back();
         sift_down_unchecked(0);
 
-        return top;
+        return popped;
     }
 
-    void update(size_t idx, T new_value)
+    void update(size_t idx, V new_value)
     {
-        T old_value = values_[idx];
+        if (idx >= values_.size())
+            throw std::out_of_range("tried to update invalid index of priority queue");
+
+        const V old_value = std::move(values_[idx]);
         values_[idx] = new_value;
 
         if (old_value < new_value)
@@ -122,7 +126,7 @@ public:
             bubble_up_unchecked(idx);
     }
 
-    const T &operator[](size_t idx) const
+    const V &operator[](size_t idx) const noexcept
     {
         return values_[idx];
     }
@@ -140,31 +144,34 @@ public:
     }
 };
 
+template <typename K, typename V>
 class priority_queue
 {
 public:
     class item
     {
-    public:
-        using priority_type = int32_t;
-
     private:
-        priority_type priority_;
-        int32_t value_;
+        K priority_;
+        V value_;
 
     public:
-        item(priority_type priority, int32_t value) noexcept
+        item(K priority, V value) noexcept
             : priority_{priority},
               value_{value}
         {
         }
 
-        priority_type priority() const noexcept
+        K priority() const noexcept
         {
             return value_;
         }
 
-        int32_t value() const noexcept
+        V value() const noexcept
+        {
+            return value_;
+        }
+
+        V &value() noexcept
         {
             return value_;
         }
@@ -204,22 +211,22 @@ public:
         return min_heap_.size();
     }
 
-    void insert(int32_t value, item::priority_type priority)
+    void add(const int32_t value, const K priority)
     {
         min_heap_.add(item{priority, value});
     }
 
-    const item &get_min()
+    const item &min() const
     {
         return min_heap_.top();
     }
 
-    item extract_min()
+    item pop_min()
     {
         return min_heap_.pop();
     }
 
-    void change_key(size_t idx, item::priority_type priority)
+    void change_key(const size_t idx, const K priority)
     {
         if (idx >= min_heap_.size())
             throw std::out_of_range("tried to decrease invalid index of priority queue");
@@ -227,7 +234,7 @@ public:
         min_heap_.update(idx, item{priority, min_heap_[idx].value()});
     }
 
-    friend std::ostream &operator<<(std::ostream &s, const priority_queue &pq) noexcept
+    friend std::ostream &operator<<(std::ostream &s, const priority_queue &pq)
     {
         if (pq.size() == 0)
             return s << "[]";
@@ -242,29 +249,32 @@ public:
 
 int main()
 {
-    priority_queue pq;
+    priority_queue<int32_t, int32_t> pq;
 
-    pq.insert(5, 5);
-    pq.insert(1, 1);
-    pq.insert(4, 4);
-    pq.insert(2, 2);
-    pq.insert(3, 3);
-    pq.insert(6, 6);
+    pq.add(5, 5);
+    pq.add(1, 1);
+    pq.add(4, 4);
+    pq.add(2, 2);
+    pq.add(3, 3);
+    pq.add(6, 6);
 
     std::cout << pq << "\n";
 
-    std::cout << "Min: " << pq.get_min().value() << "\n";
+    std::cout << "Min: " << pq.min().value() << "\n";
 
-    priority_queue::item min_item = pq.extract_min();
+    auto min_item = pq.pop_min();
 
     std::cout << "Extracted min: " << min_item.value() << "\n";
-    std::cout << "New min: " << pq.get_min().value() << "\n";
+    std::cout << "New min: " << pq.min().value() << "\n";
     std::cout << pq << "\n";
 
     pq.change_key(2, 1);
     std::cout << pq << "\n";
 
     pq.change_key(0, 100);
+    std::cout << pq << "\n";
+
+    pq.add(7, 7);
     std::cout << pq << "\n";
 
     return 0;
