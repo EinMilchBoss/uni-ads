@@ -80,6 +80,9 @@ class min_heap
     }
 
 public:
+    /**
+     * Due to a simple lookup θ(1).
+     */
     const V &top() const
     {
         if (values_.size() == 0)
@@ -88,17 +91,26 @@ public:
         return values_[0];
     }
 
+    /**
+     * Due to a simple lookup θ(1).
+     */
     size_t size() const noexcept
     {
         return values_.size();
     }
 
+    /**
+     * Due to `bubble_up_unchecked` θ(log n) for the height of the heap.
+     */
     void add(V value)
     {
         values_.push_back(value);
         bubble_up_unchecked(values_.size() - 1);
     }
 
+    /**
+     * Due to `sift_down_unchecked` θ(log n) for the height of the heap.
+     */
     V pop()
     {
         if (values_.size() == 0)
@@ -112,6 +124,9 @@ public:
         return popped;
     }
 
+    /**
+     * Due to `sift_down_unchecked` and `bubble_up_unchecked` θ(log n) for the height of the heap.
+     */
     void update(size_t idx, V new_value)
     {
         if (idx >= values_.size())
@@ -211,21 +226,33 @@ public:
         return min_heap_.size();
     }
 
-    void add(const int32_t value, const K priority)
+    /**
+     * Complexity: θ(log n).
+     */
+    void add(const V value, const K priority)
     {
         min_heap_.add(item{priority, value});
     }
 
+    /**
+     * Complexity: θ(1).
+     */
     const item &min() const
     {
         return min_heap_.top();
     }
 
+    /**
+     * Complexity: θ(log n).
+     */
     item pop_min()
     {
         return min_heap_.pop();
     }
 
+    /**
+     * Complexity: θ(log n).
+     */
     void change_key(const size_t idx, const K priority)
     {
         if (idx >= min_heap_.size())
