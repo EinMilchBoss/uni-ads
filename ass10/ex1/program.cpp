@@ -4,16 +4,17 @@
 #include <array>
 #include <cassert>
 
-constexpr size_t LAYERS = 5;
-
 class skip_list
 {
 public:
+    constexpr static size_t layer_amount = 5;
+    constexpr static size_t last_layer = layer_amount - 1;
+
     class node
     {
         friend class skip_list;
 
-        std::array<std::shared_ptr<node>, LAYERS> nexts_ = {};
+        std::array<std::shared_ptr<node>, layer_amount> nexts_ = {};
         size_t height_;
         int32_t value_;
 
@@ -31,135 +32,114 @@ public:
     };
 
 private:
-    constexpr static size_t last_layer = LAYERS - 1;
-
-    std::array<std::shared_ptr<node>, LAYERS> roots_ = {};
+    std::array<std::shared_ptr<node>, layer_amount> roots_ = {};
 
     std::mt19937 rng_;
-    std::uniform_int_distribution<uint8_t> dist_;
+    std::uniform_int_distribution<uint8_t> dist_{0, 1};
 
     bool flip_coin()
     {
         return dist_(rng_);
     }
 
-    size_t won_coinflips()
+    size_t get_random_height()
     {
-        for (size_t layer = 0; layer < last_layer; ++layer)
+        for (size_t layer = 1; layer < layer_amount; ++layer)
         {
             if (flip_coin())
-                return layer + 1;
+                return layer;
         }
-        return LAYERS;
+        return layer_amount;
     }
 
-    bool has_next_layer(size_t depth)
+    /**
+     * `max_value` is exclusive and `max_layer` is inclusive.
+     */
+    std::shared_ptr<node> do_find_predecessor(
+        int32_t max_value,
+        size_t max_layer,
+        std::shared_ptr<node> current,
+        size_t layer)
     {
-        return depth < LAYERS;
-    }
-
-    std::shared_ptr<node> &last_lower(int32_t value, size_t layer)
-    {
-        if (roots_[layer] == nullptr)
-            return roots_[layer];
-
-        // Invariant: current is not null.
-        // We use a pointer to avoid copies of the `shared_ptr`s.
-        auto current = &roots_[layer];
-        while (
-            (*current)->nexts_[layer] != nullptr &&
-            (*current)->nexts_[layer]->value_ < value)
+        if (current->nexts_[layer] != nullptr && current->nexts_[layer]->value_ < max_value)
         {
-            current = &(*current)->nexts_[layer];
+            // Move on in the same layer.
+            return do_find_predecessor(max_value, max_layer, current->nexts_[layer], layer);
         }
-
-        return *current;
-    }
-
-    void do_insert(int32_t value, std::shared_ptr<node> &inserted_prev)
-    {
-        assert(inserted_prev != nullptr);
-
-        const size_t height = won_coinflips();
-        auto inserted = std::make_shared<node>(value, height);
-
-        size_t height_idx = 0;
-        std::shared_ptr<node> *current_prev = &inserted_prev;
-        while (true)
+        else
         {
-            // Connect with the previous node as much as possible.
-            while (height_idx < height && height_idx < (*current_prev)->height_)
-            {
-                const size_t layer = last_layer - height_idx;
-
-                inserted->nexts_[layer] = (*current_prev)->nexts_[layer];
-                (*current_prev)->nexts_[layer] = inserted;
-
-                ++height_idx;
-            }
-
-            if (height_idx >= height)
-                break;
-
-            // In case the previous node is smaller than the current node,
-            // we have to find the last lower (predecessor) of that layer instead.
-            current_prev = &last_lower(value, last_layer - height_idx);
-        }
-    }
-
-    void insert(int32_t value, std::shared_ptr<node> &current, size_t layer)
-    {
-        assert(current != nullptr);
-
-        if (current->nexts_[layer] == nullptr || value <= current->nexts_[layer]->value_)
-        {
-            if (layer < last_layer)
+            if (layer < max_layer)
             {
                 // Move down if the next node is bigger or doesn't exist and there is a next layer.
-                insert(value, current, layer + 1);
+                return do_find_predecessor(max_value, max_layer, current, layer + 1);
             }
             else
             {
-                // Add new node to the right.
-                do_insert(value, current);
+                // We reached the end.
+                return current;
+            }
+        }
+    }
+
+    /**
+     * `max_value` is exclusive and `max_layer` is inclusive.
+     */
+    std::shared_ptr<node> find_predecessor(int32_t max_value, size_t max_layer)
+    {
+        for (size_t i = 0; i <= max_layer; ++i)
+        {
+            if (roots_[i] != nullptr && roots_[i]->value_ < max_value)
+                return do_find_predecessor(max_value, max_layer, roots_[i], i);
+        }
+        return nullptr;
+    }
+
+    void do_insert(std::shared_ptr<node> inserted, size_t height)
+    {
+        auto pred = find_predecessor(inserted->value_, last_layer - height);
+        if (pred == nullptr)
+        {
+            // Connect the roots to the inserted node for the rest.
+            while (height < inserted->height_)
+            {
+                const size_t layer = last_layer - height;
+
+                inserted->nexts_[layer] = roots_[layer];
+                roots_[layer] = inserted;
+                ++height;
             }
         }
         else
         {
-            // Move on in the same layer.
-            insert(value, current->nexts_[layer], layer);
+            // Connect as much as possible.
+            while (height < inserted->height_ && height < pred->height_)
+            {
+                const size_t layer = last_layer - height;
+
+                inserted->nexts_[layer] = pred->nexts_[layer];
+                pred->nexts_[layer] = inserted;
+                ++height;
+            }
+
+            // The current predecessor is smaller than the inserted node.
+            // We have to find the next best predecessor and connect the rest.
+            if (height < inserted->height_)
+                do_insert(inserted, height);
         }
     }
 
 public:
     skip_list(std::random_device::result_type seed)
-        : rng_(std::mt19937(seed)),
-          dist_(0, 1)
+        : rng_(std::mt19937(seed))
     {
     }
 
     void insert(int32_t value)
     {
-        for (size_t start_layer = 0; start_layer < LAYERS; ++start_layer)
-        {
-            if (roots_[start_layer] != nullptr && roots_[start_layer]->value_ < value)
-            {
-                insert(value, roots_[start_layer], start_layer);
-                return;
-            }
-        }
-
-        // The node is either the first one or the smallest so far.
-        const size_t height = won_coinflips();
+        const size_t height = get_random_height();
         auto inserted = std::make_shared<node>(value, height);
 
-        for (size_t i = 0; i < height; ++i)
-        {
-            const size_t layer = last_layer - i;
-
-            inserted->nexts_[layer] = roots_[layer];
-            roots_[layer] = inserted;
-        }
+        do_insert(inserted, 0);
     }
 
     // void remove(int32_t value)
@@ -169,6 +149,38 @@ public:
     // bool contains(int32_t value)
     // {
     // }
+
+    void output_layer(std::ostream &s, size_t layer) const
+    {
+        const std::shared_ptr<node> *current = &roots_[layer];
+        if (*current == nullptr)
+            return;
+
+        s << (*current)->value_;
+        current = &(*current)->nexts_[layer];
+
+        while (*current)
+        {
+            s << ", " << (*current)->value_;
+            current = &(*current)->nexts_[layer];
+        }
+    }
+
+    friend std::ostream &operator<<(std::ostream &s, const skip_list &sl)
+    {
+        for (size_t i = 0; i < last_layer; ++i)
+        {
+            s << i << ": (";
+            sl.output_layer(s, i);
+            s << "), ";
+        }
+
+        s << last_layer << ": (";
+        sl.output_layer(s, last_layer);
+        s << ')';
+
+        return s;
+    }
 };
 
 int main()
@@ -178,11 +190,12 @@ int main()
     std::cout << "Used seed: " << seed << ".\n";
 
     skip_list sl(seed);
-    sl.insert(1);
-    sl.insert(2);
-    sl.insert(0);
-    // sl.contains(1);
-    // sl.remove(1);
+    for (int32_t i = 0; i < 10; ++i)
+    {
+        sl.insert(i);
+    }
+
+    std::cout << sl << "\n";
 
     return 0;
 }
