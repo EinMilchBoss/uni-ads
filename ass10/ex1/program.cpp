@@ -59,7 +59,7 @@ private:
         int32_t max_value,
         size_t max_layer,
         std::shared_ptr<node> current,
-        size_t layer)
+        size_t layer) const
     {
         if (current->nexts_[layer] != nullptr && current->nexts_[layer]->value_ < max_value)
         {
@@ -84,7 +84,7 @@ private:
     /**
      * `max_value` is exclusive and `max_layer` is inclusive.
      */
-    std::shared_ptr<node> find_predecessor(int32_t max_value, size_t max_layer)
+    std::shared_ptr<node> find_predecessor(int32_t max_value, size_t max_layer) const
     {
         for (size_t i = 0; i <= max_layer; ++i)
         {
@@ -100,31 +100,59 @@ private:
         if (pred == nullptr)
         {
             // Connect the roots to the inserted node for the rest.
-            while (height < inserted->height_)
+            for (; height < inserted->height_; ++height)
             {
                 const size_t layer = last_layer - height;
 
                 inserted->nexts_[layer] = roots_[layer];
                 roots_[layer] = inserted;
-                ++height;
             }
         }
         else
         {
             // Connect as much as possible.
-            while (height < inserted->height_ && height < pred->height_)
+            for (; height < inserted->height_ && height < pred->height_; ++height)
             {
                 const size_t layer = last_layer - height;
 
                 inserted->nexts_[layer] = pred->nexts_[layer];
                 pred->nexts_[layer] = inserted;
-                ++height;
             }
 
             // The current predecessor is smaller than the inserted node.
             // We have to find the next best predecessor and connect the rest.
             if (height < inserted->height_)
                 do_insert(inserted, height);
+        }
+    }
+
+    void do_remove(std::shared_ptr<node> removed, size_t height)
+    {
+        auto pred = find_predecessor(removed->value_, last_layer - height);
+        if (pred == nullptr)
+        {
+            // Connect the roots to the inserted node for the rest.
+            for (; height < removed->height_; ++height)
+            {
+                const size_t layer = last_layer - height;
+
+                roots_[layer] = removed->nexts_[layer];
+            }
+        }
+        else
+        {
+            // Connect as much as possible.
+            for (; height < removed->height_ && height < pred->height_; ++height)
+            {
+                const size_t layer = last_layer - height;
+
+                pred->nexts_[layer] = removed->nexts_[layer];
+            }
+
+            // The current predecessor is smaller than the inserted node.
+            // We have to find the next best predecessor and connect the rest.
+            if (height < removed->height_)
+                do_remove(removed, height);
         }
     }
 
@@ -142,13 +170,35 @@ public:
         do_insert(inserted, 0);
     }
 
-    // void remove(int32_t value)
-    // {
-    // }
+    void remove(int32_t value)
+    {
+        // Throw an error if the value does not exist.
+        if (!contains(value))
+            throw std::invalid_argument("tried to remove non-existing element in skip list");
 
-    // bool contains(int32_t value)
-    // {
-    // }
+        auto pred = find_predecessor(value, last_layer);
+        auto removed = pred ? pred->nexts_[last_layer] : roots_[last_layer];
+        assert(removed && "node is only a predecessor, if the next element is the one we look for");
+        do_remove(removed, 0);
+    }
+
+    bool contains(int32_t value) const
+    {
+        const auto pred = find_predecessor(value, last_layer);
+
+        if (pred)
+        {
+            return pred->nexts_[last_layer]
+                       ? pred->nexts_[last_layer]->value_ == value
+                       : false;
+        }
+        else
+        {
+            return roots_[last_layer]
+                       ? roots_[last_layer]->value_ == value
+                       : false;
+        }
+    }
 
     void output_layer(std::ostream &s, size_t layer) const
     {
@@ -186,16 +236,30 @@ public:
 int main()
 {
     std::random_device generate_seed;
-    auto seed = generate_seed();
+    // auto seed = generate_seed();
+    unsigned int seed = 2215646153;
     std::cout << "Used seed: " << seed << ".\n";
 
     skip_list sl(seed);
-    for (int32_t i = 0; i < 10; ++i)
+    for (int32_t i = 0; i < 100; ++i)
     {
         sl.insert(i);
     }
-
     std::cout << sl << "\n";
+
+    sl.remove(0);
+    sl.remove(49);
+    sl.remove(99);
+    std::cout << sl << "\n";
+
+    std::cout << " 0: " << !sl.contains(0) << "\n";
+    std::cout << " 1: " << sl.contains(1) << "\n";
+
+    std::cout << "49: " << !sl.contains(49) << "\n";
+    std::cout << "50: " << sl.contains(50) << "\n";
+
+    std::cout << "89: " << sl.contains(98) << "\n";
+    std::cout << "99: " << !sl.contains(99) << "\n";
 
     return 0;
 }
