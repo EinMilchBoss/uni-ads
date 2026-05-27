@@ -236,8 +236,7 @@ public:
 int main()
 {
     std::random_device generate_seed;
-    // auto seed = generate_seed();
-    unsigned int seed = 2215646153;
+    auto seed = generate_seed();
     std::cout << "Used seed: " << seed << ".\n";
 
     skip_list sl(seed);
